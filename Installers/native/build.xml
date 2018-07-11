@@ -1,18 +1,16 @@
 <!-- project build configuration -->
 <project name="Simple Test" basedir=".">
-  <!-- the root URL from which the client is downloaded (minus getdown subdir) -->
-  <property name="root_url" value="https://raw.githubusercontent.com/dmarino/dmarino.github.io/master/docs/test/"/>
   <!-- for now we build only English language installers -->
   <property name="default_locale" value="en"/>
 
   <!--Making Windows Installer-->	
   <target name="windows" description="Builds Windows installer.">
-  	<taskdef name="nsis" classname="com.danielreese.nsisant.Task"
-  	    classpath="lib/nsisant-1.3.jar">  		
-  	</taskdef>
+	<taskdef name="nsis" classname="com.danielreese.nsisant.Task"
+	    classpath="lib/nsisant-1.3.jar">  		
+ 	</taskdef>
   	<nsis script="windows/installationConfiguration.nsi"/>
-  </target>	
-
+  </target>
+	
   <!--Making Mac OS Installer-->		
   <target name="mac" description="Builds Mac OS installer image.">
     <property name="base.name" value="Simple-Test"/>
@@ -40,31 +38,30 @@
     <copy todir="${img.dir}/${app.name}/${jdir}/" file="../getdown/myapp.png"/>
     <copy todir="${img.dir}/${app.name}/${jdir}/" file="../getdown/progress.png"/>
     <copy todir="${img.dir}/${app.name}/${jdir}/" file="../getdown/splash.png"/>
-    <echo file="${img.dir}/${app.name}/${jdir}/getdown.txt"
-          message="appbase = ${root_url}${line.separator}"/>
+  	<copy todir="${img.dir}/${app.name}/${jdir}/" file="../getdown/getdown.txt"/>
 
     <!-- prepare the disk image -->
     <mkdir dir="${img.dir}/.background"/>
     <copy todir="${img.dir}/.background/" file="mac/backgroundImage.jpg"/>
-    <exec executable="/bin/ln" dir="${img.dir}" os="Mac OS X">
+    <exec executable="/bin/ln" dir="${img.dir}">
       <arg line="-s"/>
       <arg line="/Applications"/>
       <arg line="Applications"/>
     </exec>
 
     <!-- fix permissions, no matter how silly the umask made them -->
-    <exec executable="/bin/chmod" os="Mac OS X">
+    <exec executable="/bin/chmod">
       <arg line="-R"/>
       <arg line="u+w,go-w,a+r"/>
       <arg line="'${img.dir}'"/>
     </exec>
-    <exec executable="/bin/chmod" os="Mac OS X">
+    <exec executable="/bin/chmod">
       <arg line="a+x"/>
       <arg line="'${img.dir}/${app.name}/Contents/MacOS/JavaApplicationStub'"/>
     </exec>
 
     <!-- finally create the disk image -->
-    <exec executable="mkisofs" failonerror="true" os="Mac OS X">
+    <exec executable="mkisofs" failonerror="true">
       <arg line="-quiet"/>
       <arg line="-hide-rr-moved"/>
       <arg line="-hide-joliet"/>
@@ -80,46 +77,48 @@
       <arg line="'Simple-Test.dmg'"/>
       <arg file="${img.dir}"/>
     </exec>
+  	<delete dir="${img.dir}"/>
   </target>
-
+	
 	<!--Make Linux Installer-->
-  <target name="linux" description="Creates the Linux installer.">
-	    <property name="temp.dir" value="linux-image"/>
-	    <mkdir dir="${temp.dir}"/>
+	  <target name="linux" description="Creates the Linux installer.">
+		    <property name="temp.dir" value="linux-image"/>
+		    <mkdir dir="${temp.dir}"/>
 
-	    <copy todir="${temp.dir}">
-	      <fileset dir="../getdown" includes="getdown.jar"/>
-	      <fileset dir="../getdown" includes="background.png"/>
-	      <fileset dir="linux" includes="coreen"/>
-	      <fileset dir="linux" includes="desktop.png"/>
-	    </copy>
+		    <copy todir="${temp.dir}">
+		      <fileset dir="../getdown" includes="getdown.jar"/>
+		      <fileset dir="../getdown" includes="getdown.txt"/>	
+		      <fileset dir="../getdown" includes="myapp.png"/>
+			  <fileset dir="../getdown" includes="progress.png"/>
+			  <fileset dir="../getdown" includes="splash.png"/>		    	
+		      <fileset dir="linux" includes="coreen"/>
+		      <fileset dir="linux" includes="desktop.png"/>
+		    </copy>
 
-	    <echo file="${temp.dir}/getdown.txt" message="appbase=${root_url}${line.separator}"/>
+		    <copy todir="${temp.dir}" overwrite="true" encoding="UTF-8">
+		      <fileset dir="linux" includes="finish_install.sh"/>
+		      <filterset>
+		        <filter token="client_ident" value="${client_ident}"/>
+		        <filter token="client_title" value="${client_title}"/>
+		        <filter token="editor_title" value="${editor_title}"/>
+		      </filterset>
+		    </copy>
 
-	    <copy todir="${temp.dir}" overwrite="true" encoding="UTF-8">
-	      <fileset dir="linux" includes="finish_install.sh"/>
-	      <filterset>
-	        <filter token="client_ident" value="${client_ident}"/>
-	        <filter token="client_title" value="${client_title}"/>
-	        <filter token="editor_title" value="${editor_title}"/>
-	      </filterset>
-	    </copy>
+		    <exec executable="chmod" failonerror="true">
+		      <arg line="a+rx"/>
+		      <arg line="${temp.dir}/finish_install.sh"/>
+		      <arg line="${temp.dir}/coreen"/>
+		    </exec>
 
-	    <exec executable="chmod" failonerror="true">
-	      <arg line="a+rx"/>
-	      <arg line="${temp.dir}/finish_install.sh"/>
-	      <arg line="${temp.dir}/coreen"/>
-	    </exec>
+		    <exec executable="makeself" failonerror="true" outputproperty="make.output">
+		      <arg line="${temp.dir}"/>
+		      <arg line="SImpleTest-installer.bin"/>
+		      <arg line="coreen"/>
+		      <arg line="./finish_install.sh"/>
+		      <arg line="$0"/>
+		    </exec>
+		    <echo level="info">${make.output}</echo>
 
-	    <exec executable="makeself" failonerror="true" outputproperty="make.output">
-	      <arg line="${temp.dir}"/>
-	      <arg line="coreen-install.bin"/>
-	      <arg line="coreen"/>
-	      <arg line="./finish_install.sh"/>
-	      <arg line="$0"/>
-	    </exec>
-	    <echo level="info">${make.output}</echo>
-
-	    <delete dir="${temp.dir}"/>
-	  </target>	
+		    <delete dir="${temp.dir}"/>
+		  </target>
 </project>

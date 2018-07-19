@@ -1,5 +1,5 @@
 # The URL from which the client is downloaded
-appbase = https://raw.githubusercontent.com/dmarino/dmarino.github.io/master/docs/test/
+appbase = https://raw.githubusercontent.com/dmarino/SimpleTest-server/master/getdownTest/
 allow_offline = true
 
 # UI Configuration
